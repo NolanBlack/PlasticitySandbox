@@ -40,7 +40,7 @@ def main():
     eps_i, eps_p, alpha = material.solve(eps_i, eps_final, eps_p, alpha, solver_delta)
 
     # plot
-    material.plot_history("demo_1D", "results/demo1D.png")
+    material.plot_history("Exponential isotropic hardening of a 1D material under loading/unloading", "results/demo1D.png")
 
 if __name__ == "__main__":
     main()
