@@ -22,4 +22,4 @@ Demo 1D implements an example from Chapter 1 of Computational Inelasticity.
 ![alt text](https://github.com/NolanBlack/PlasticitySandbox/blob/main/results/demo1D.png?raw=true)
 
 #  TODO
-The accumulation of plastic strain... is not quite right???
+Add a check for the shifting yield stress??

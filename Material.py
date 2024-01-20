@@ -133,6 +133,46 @@ class Material(ABC):
             eps_p: initial state of plastic strain
             alpha: material internal variables
             delta: increment used in updating strain
+
+
+        sigma
+            |                       
+        s_t |....................... 
+            |                     .. 
+            |                    . . 
+            |                   .  . _-
+        s_1 |....................._X
+            |                  _-  .
+            |               _- .   .
+            |            _- .  .   .
+        s_Y |........._-   .   .   .
+            |        /    .    .   .
+        s_0 |...... /....X     .   .
+            |      /    ..     .   .
+            |     /    . .     .   .
+            |    /    .  .     .   .
+            |   /    .   .     .   .
+            |  /    .    .     .   .
+            | /    .     .     .   .
+            |/    .      .     .   .
+            /____._______|_____.___|_________ epsilon
+               ep_0     e_0       e_1
+
+        sigma
+            |                       
+        s_t |............ 
+            |          .. 
+            |         . . 
+            |      E .  .
+            |       .   . s_correction = s_t - s_1
+            |      .    .
+            |     .     .
+            |    .      .
+            |   .       .
+            |  .        .
+        s_1 |.|.........|
+               delta_gamma = e_1 - e_0 - ep_0 = the new plastic strain
+
         """
         eps_i = eps_init
         eps_increment = delta*(eps_final - eps_init)
@@ -160,6 +200,9 @@ class Material(ABC):
                 delta_gamma = self.NRstep(f_tri, alpha)
                 sigma_i = self.correct_trial_sigma(sigma_tri, delta_gamma) # update stress
                 eps_p += delta_gamma * np.sign(sigma_tri) # update plastic strain
+
+                # TODO which one??
+                #alpha += delta_gamma * np.sign(sigma_tri) # update plastic strain
                 alpha += delta_gamma # internal state update
                 C = self.C_tangent(alpha)
 
