@@ -1,7 +1,6 @@
 import numpy as np
-from NeoHookeanTest import pow, material, FDcheck_2to2, FDcheck_2to1, tensor_2by2_to4
+from NeoHookeanTest import pow, material, FDcheck_2to2, FDcheck_2to1, tensor_2by2_to4, DIM
 
-DIM = 2
 
 ################################################################################
 # INIT
@@ -106,7 +105,7 @@ def dW_dF(F, mu, kappa):
 
 # this is only true for small deformations!!
 # D_{iJk L} = C_{IJKL} F_{iI} F_{kK} + δ_{ik} S_{JL}
-def d2W_dF2(F, mu, kappa):
+def d2W_dF2_small_deformation(F, mu, kappa):
     lam = kappa - 2/3 * mu
     C = d2w_de2(E(F), mu, kappa).flatten()
     S = dw_de(E(F), mu, kappa)
@@ -124,9 +123,6 @@ def d2W_dF2(F, mu, kappa):
                             D_iJkL += C[idx_IJKL] * F[i,I] * F[k,K]
                     d.append(D_iJkL)
     return np.array(d).reshape((DIM*DIM, DIM*DIM))
-
-def tensor4_idx(i, j, p, q):
-    return i*DIM*DIM*DIM + j*DIM*DIM + p*DIM + q
 
 def S(F, mu, kappa):
     e = E(F)
@@ -203,6 +199,9 @@ def dP_dS(F, S):
                         dP.append(0.0)
     dP = np.array(dP).reshape((DIM*DIM, DIM*DIM))
     return dP
+
+def tensor4_idx(i, j, p, q):
+    return i*DIM*DIM*DIM + j*DIM*DIM + p*DIM + q
 
 
 ################################################################################
