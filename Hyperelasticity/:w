@@ -1,0 +1,71 @@
+import numpy as np
+from NeoHookeanTest import pow, material, FDcheck_2to2, FDcheck_2to1
+
+DIM = 2
+
+def F_init2D():
+    u11 = 0.1
+    u21 = 0.2
+    u12 = -0.3
+    u22 = 0.2
+    u11 = 0
+    u21 = 0
+    u12 = 0
+    u22 = 0
+
+    du = np.array([u11, u21, u12, u22]).reshape((DIM,DIM))
+    F = np.eye(DIM)
+    F += du
+    return F
+
+def F_init3D():
+    u11 = 0.1
+    u21 = 0.2
+    u31 = -0.1
+    u12 = -0.5
+    u22 = 0.4
+    u32 = -0.1
+    u13 = 0.0
+    u23 = -0.2
+    u33 = 0.3
+    du = np.array([u11, u21, u31, u12, u22, u32, u13, u23, u33]).reshape((DIM,DIM))
+
+    F = np.eye(DIM)
+    F += du
+    return F
+
+def GreenStrain(F):
+    return 0.5 * (F.T @ F - np.eye(DIM))
+
+def dGreenStrain_dF(F):
+    c_array = []
+    for i in range(DIM):                # i =  0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1
+        for j in range(DIM):            # j =  0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1
+            for p in range(DIM):        # p =  0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1
+                for q in range(DIM):    # q =  0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1
+                    if i == j and p == q and i == q:
+                        c_array.append(1)
+                    else:
+                        c_array.append(0)
+    dE = np.array(c_array).reshape((DIM*DIM, DIM*DIM))
+    return dE
+
+def main():
+
+    # input parameters
+    youngs_mod = 1.0
+    poisson_rat = 0.3
+
+    # init
+    mu, lam, kappa = material(youngs_mod, poisson_rat)
+    if(DIM == 2):
+        F = F_init2D()
+    else :
+        F = F_init3D()
+
+    err = (GreenStrain(F) -   FDcheck_2to2(GreenStrain, (F, ), 0))
+    print(np.amax(np.abs(err)))
+
+
+if __name__ == "__main__":
+    main()
