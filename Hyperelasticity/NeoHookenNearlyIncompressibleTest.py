@@ -1,15 +1,11 @@
-import numpy as np
+from Hypelasticity import pow, material, FDcheck_2to2, FDcheck_2to1, tensor_2by2_to4, DIM, \
+        I1, dI1_dF, d2I1_dF2, J, dJ_dF, FinvT, dFinvT_dF, I1_bar, dI1_bar_dF, \
+        plot_deformation
 
-DIM = 2
-
-def pow(x, p):
-    return x**p
-
-def material(youngs_mod, poisson_rat):
-    mu  = youngs_mod/( (1+poisson_rat)*2 )
-    lam = youngs_mod*poisson_rat/( (1+poisson_rat)*(1-2*poisson_rat) )
-    kappa  = lam + 2/3 * mu
-    return mu, lam, kappa
+# input parameters
+youngs_mod = 1.0
+poisson_rat = 0.3
+mu, lam, kappa = material(youngs_mod, poisson_rat)
 
 def F_init2D():
     u11 = 0.1
@@ -42,85 +38,30 @@ def F_init3D():
     F += du
     return F
 
-def tensor_2by2_to4(a,b):
-
-    c_array = []
-    for i in range(DIM):
-        for j in range(DIM):
-            for p in range(DIM):
-                for q in range(DIM):
-                    c_array.append(a[i,j]*b[p,q])
-    c = np.array(c_array).reshape((DIM*DIM, DIM*DIM))
-    return c
 
 
-def FinvT(F):
-    return np.linalg.inv(F).T
-def dFinvT_dF(F):
-    # dinvA_ij_dA_pq = invA_ip invA_qj
-    # dinvA_ji_dA_pq = invA_pj invA_iq
 
-    dF = FinvT(F)
-    c_array = []
-    for i in range(DIM):                # i =  0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1
-        for j in range(DIM):            # j =  0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1
-            for p in range(DIM):        # p =  0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1
-                for q in range(DIM):    # q =  0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1
-                    c_array.append(-dF[p,j]*dF[i,q]) # negative!
-    c = np.array(c_array).reshape((DIM*DIM, DIM*DIM))
-    return c
-
-# verified
-def J(F):
-    return np.linalg.det(F)
-def dJ_dF(F):
-    return FinvT(F) * J(F)
-
-# verified
-def I1(F):
-    return np.trace(F.T @ F)
-def dI1_dF(F):
-    return 2*F
-def d2I1_dF2(F):
-    #c_array = []
-    #for i in range(DIM):                # i =  0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1
-    #    for j in range(DIM):            # j =  0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1
-    #        for p in range(DIM):        # p =  0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1
-    #            for q in range(DIM):    # q =  0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1
-    #                if i == j and p == q and i == q:
-    #                    c_array.append(1)
-    #                else:
-    #                    c_array.append(0)
-    #d2I2 = np.array(c_array).reshape((DIM*DIM, DIM*DIM))
-    return 2 * np.eye(DIM*DIM)
-    #return d2I2
-
-# verified
-def I1_bar(F):
-    return (pow(J(F),(-2./3.))) * I1(F)
-def dI1_bar_dF(F):
-    return -2/3 * pow(J(F),(-5/3)) * dJ_dF(F) * I1(F) \
-            + pow(J(F),(-2/3)) * dI1_dF(F)
-
-
-def W(F, mu, kappa) :
+################################################################################
+# Energy Density
+################################################################################
+def W(F) :
     W1 = mu/2 * (I1_bar(F) - DIM)
     W2 = kappa/4 * (pow(J(F) - 1,2))
     W3 = kappa/4 * ( pow(np.log(J(F)),2) )
     return W1 + W2 + W3
 
-def dW_dF(F, mu, kappa):
+def dW_dF(F):
     return mu/2 * dI1_bar_dF(F) \
             + kappa/2 * (J(F) - 1) * dJ_dF(F) \
             + kappa/2 * np.log(J(F)) / J(F) * dJ_dF(F)
-def dW_dF_ana(F, mu, kappa):
+def dW_dF_ana(F):
     dW1_dF = mu * pow(J(F),(-2/3)) * ( F - (1/DIM)*I1(F) * FinvT(F) )
     dW2_dF = kappa/2 * J(F) * FinvT(F) * ( J(F) - 1)
     dW3_dF = kappa/2 * J(F) * FinvT(F) * ( 1/J(F) * np.log(J(F)) )
     return dW1_dF + dW2_dF + dW3_dF
 
 
-def d2W_dF2(F, mu, kappa):
+def d2W_dF2(F):
     # W1
     d2I2 = d2I1_dF2(F)
     term1 = tensor_2by2_to4(mu * (-2/3)*pow(J(F),(-5/3))*dJ_dF(F) , 
@@ -144,49 +85,10 @@ def d2W_dF2(F, mu, kappa):
 
     return d2W1_dF2 + d2W2_dF2 + d2W3_dF2
 
-def FDcheck_2to2(func, params, input_idx):
 
-    df_dx = np.zeros((DIM*DIM,DIM*DIM))
-    f0 = (func(*params))
-
-    FD_delta = 1.e-3
-
-    # pertub input i,j
-    idx = 0
-    for i in range(DIM):
-        for j in range(DIM):
-            params[input_idx][i,j] += FD_delta
-            fupp = (func(*params))
-            params[input_idx][i,j] -= 2*FD_delta
-            fdown = (func(*params))
-            params[input_idx][i,j] += FD_delta
-
-            df_dij = (fupp - fdown) / FD_delta / 2
-            df_dx[:,idx] = df_dij.flatten()
-
-            idx += 1
-    return df_dx
-
-def FDcheck_2to1(func, params, input_idx):
-    df_dx = np.zeros((DIM,DIM))
-    f0 = (func(*params))
-    FD_delta = 1.e-4
-
-    # pertub input i,j
-    for i in range(DIM):
-        for j in range(DIM):
-            params[input_idx][i,j] += FD_delta
-            fupp = (func(*params))
-            params[input_idx][i,j] -= 2*FD_delta
-            fdown = (func(*params))
-            params[input_idx][i,j] += FD_delta
-
-            df_dij = (fupp - fdown) / FD_delta/2
-            df_dx[i,j] = df_dij
-
-    return df_dx
-
-
+################################################################################
+# Main
+################################################################################
 def main():
 
     # input parameters
@@ -206,16 +108,16 @@ def main():
     #print()
     #print()
 
-    #print(FDcheck_2to1(W, (F, mu, kappa), 0))
-    #print(dW_dF(F, mu, kappa) - dW_dF_ana(F, mu, kappa))
-    #print(dW_dF_ana(F, mu, kappa) - FDcheck_2to1(W, (F, mu, kappa), 0))
+    #print(FDcheck_2to1(W, (F), 0))
+    #print(dW_dF(F) - dW_dF_ana(F))
+    #print(dW_dF_ana(F) - FDcheck_2to1(W, (F), 0))
     #print()
     #print()
 
     #print(FDcheck_2to2(dI1_dF, (F, ), 0))
     #print(d2I1_dF2(F, ) -   FDcheck_2to2(dI1_dF, (F, ), 0))
-    #print(FDcheck_2to2(dW_dF_ana, (F, mu, kappa), 0))
-    #print(d2W_dF2(F, mu, kappa) -   FDcheck_2to2(dW_dF_ana, (F, mu, kappa), 0))
+    #print(FDcheck_2to2(dW_dF_ana, (F), 0))
+    #print(d2W_dF2(F) -   FDcheck_2to2(dW_dF_ana, (F), 0))
     #print(F)
     #print(J(F))
     #print(I1(F))
@@ -227,13 +129,14 @@ def main():
     #print()
     #print()
 
-    print(W(F, mu, kappa))
-    print(dW_dF_ana(F, mu, kappa))
-    print(d2W_dF2(F, mu, kappa))
+    print(W(F))
+    print(dW_dF_ana(F))
+    print(d2W_dF2(F))
 
-    err = (d2W_dF2(F, mu, kappa) -   FDcheck_2to2(dW_dF_ana, (F, mu, kappa), 0))
+    err = (d2W_dF2(F) -   FDcheck_2to2(dW_dF_ana, (F), 0))
     print(np.amax(np.abs(err)))
 
+    plot_deformation(dW_dF_ana, (mu, kappa))
 
 if __name__ == "__main__":
     print("WORK IN PROGRESS")
@@ -241,7 +144,7 @@ if __name__ == "__main__":
 
 
 
-#def d2W_dF2(F, mu, kappa):
+#def d2W_dF2(F):
 #    # W1
 #    d2I2 = d2I1_dF2(F)
 #    term1 = tensor_2by2_to4(mu * (-2/3)*pow(J(F),(-5/3))*dJ_dF(F) , 

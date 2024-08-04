@@ -19,8 +19,8 @@ def exponential_hardening_1d():
 
 def main():
 
-    #material = linear_hardening_1d()
-    material = exponential_hardening_1d()
+    material = linear_hardening_1d()
+    #material = exponential_hardening_1d()
 
     eps_init = 0.0 # initial strain
     eps_p = 0.0 # state of plastic strain at initial

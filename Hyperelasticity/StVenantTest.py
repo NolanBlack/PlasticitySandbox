@@ -1,6 +1,10 @@
 import numpy as np
-from NeoHookeanTest import pow, material, FDcheck_2to2, FDcheck_2to1, tensor_2by2_to4, DIM
+from Hyperelasticity import pow, material, FDcheck_2to2, FDcheck_2to1, tensor_2by2_to4, DIM
 
+# input parameters
+youngs_mod = 1.0
+poisson_rat = 0.3
+mu, lam, kappa = material(youngs_mod, poisson_rat)
 
 ################################################################################
 # INIT
@@ -59,17 +63,17 @@ def dE_dF(F):
     dE *= 0.5
     return dE
 
-def w(e, mu, kappa) :
+def w(e) :
     lam = kappa - 2/3 * mu
     W1 = mu * np.sum(e * e)
     W2 =  0.5*lam*pow(np.trace(e), 2)
     return W1 + W2
-def dw_de(e, mu, kappa):
+def dw_de(e):
     lam = kappa - 2/3 * mu
     dw1_de = lam * np.trace(e) * np.eye(DIM)
     dw2_de = 2*mu*e
     return dw1_de + dw2_de
-def d2w_de2(e, mu, kappa):
+def d2w_de2(e):
     lam = kappa - 2/3 * mu
     #d2w1_de2 = lam * tensor_2by2_to4(np.eye(DIM),np.eye(DIM))
     C = np.zeros((DIM,DIM,DIM,DIM))
@@ -94,21 +98,21 @@ def d2w_de2(e, mu, kappa):
 ################################################################################
 # Strain energy wrt F
 ################################################################################
-def W(F, mu, kappa) :
+def W(F) :
     lam = kappa - 2/3 * mu
     W1 = mu * np.sum(E(F) * E(F))
     W2 =  0.5*lam*pow(np.trace(E(F)), 2)
     return W1 + W2
 
-def dW_dF(F, mu, kappa):
-    return tensor_2by4_to2(dw_de(E(F), mu, kappa), dE_dF(F))
+def dW_dF(F):
+    return tensor_2by4_to2(dw_de(E(F)), dE_dF(F))
 
 # this is only true for small deformations!!
 # D_{iJk L} = C_{IJKL} F_{iI} F_{kK} + δ_{ik} S_{JL}
-def d2W_dF2_small_deformation(F, mu, kappa):
+def d2W_dF2_small_deformation(F):
     lam = kappa - 2/3 * mu
-    C = d2w_de2(E(F), mu, kappa).flatten()
-    S = dw_de(E(F), mu, kappa)
+    C = d2w_de2(E(F)).flatten()
+    S = dw_de(E(F))
     d = []
     for i in range(DIM):            
         for J in range(DIM):        
@@ -124,15 +128,15 @@ def d2W_dF2_small_deformation(F, mu, kappa):
                     d.append(D_iJkL)
     return np.array(d).reshape((DIM*DIM, DIM*DIM))
 
-def S(F, mu, kappa):
+def S(F):
     e = E(F)
-    D_ijkl = d2w_de2(e, mu, kappa).flatten()
-    return dw_de(e, mu, kappa)
+    D_ijkl = d2w_de2(e).flatten()
+    return dw_de(e)
 
-def d2W_dF2(F, mu, kappa):
+def d2W_dF2(F):
     e = E(F)
-    D_ijkl = d2w_de2(e, mu, kappa).flatten()
-    s = dw_de(e, mu, kappa)
+    D_ijkl = d2w_de2(e).flatten()
+    s = dw_de(e)
     dP =  dP_dS(F, s) .flatten()
     dE = dE_dF(F).flatten()
 
@@ -252,7 +256,7 @@ def main():
     # test nonzero inputs
     print("Inputs")
     e = E(F)
-    s = dw_de(e, mu, kappa)
+    s = dw_de(e)
     p = P(F, s)
     print(F)
     print(E(F))
@@ -268,11 +272,11 @@ def main():
 
     # test dw_de
     #print(w(e,mu,kappa))
-    #print(FDcheck_2to1(w, (e, mu, kappa), 0))
+    #print(FDcheck_2to1(w, (e), 0))
     print("dw_de")
-    print(dw_de(e, mu, kappa) - FDcheck_2to1(w, (e, mu, kappa), 0))
+    print(dw_de(e) - FDcheck_2to1(w, (e,), 0))
     print("d2w_de2")
-    print(d2w_de2(e, mu, kappa) - FDcheck_2to2(dw_de, (e, mu, kappa), 0))
+    print(d2w_de2(e) - FDcheck_2to2(dw_de, (e,), 0))
     print()
 
     print("dp_ds")
@@ -285,23 +289,34 @@ def main():
     #print(np.sum(E(F) * E(F)) )
     #print(W(F,mu,kappa))
     print("dW_dF")
-    print(dW_dF(F, mu, kappa) - FDcheck_2to1(W, (F, mu, kappa), 0))
+    print(dW_dF(F) - FDcheck_2to1(W, (F,), 0))
     print()
     print("d2W_d2F")
-    print(d2W_dF2(F, mu, kappa) - FDcheck_2to2(dW_dF, (F, mu, kappa), 0))
+    print(d2W_dF2(F) - FDcheck_2to2(dW_dF, (F,), 0))
     print()
 
     #e = E(F)
-    #D_ijkl = d2w_de2(e, mu, kappa).flatten()
-    #s = dw_de(e, mu, kappa)
+    #D_ijkl = d2w_de2(e).flatten()
+    #s = dw_de(e)
     #dP =  dP_dS(F, s) .flatten()
     #dE = dE_dF(F).flatten()
-    #print(d2w_de2(e, mu, kappa))
+    #print(d2w_de2(e))
     #print(dE_dF(F))
     #print(dP_dS(F, s))
-    #print(d2W_dF2(F, mu, kappa) / FDcheck_2to2(dW_dF, (F, mu, kappa), 0))
-    #print(FDcheck_2to2(dW_dF, (F, mu, kappa), 0) / d2W_dF2(F, mu, kappa) )
+    #print(d2W_dF2(F) / FDcheck_2to2(dW_dF, (F), 0))
+    #print(FDcheck_2to2(dW_dF, (F), 0) / d2W_dF2(F) )
 
+    gradu = F - np.eye(DIM)
+    gradu /= 1000
+    F0 = gradu + np.eye(DIM)
+    dF = gradu
+
+    P0 = dW_dF(F0)
+    A = d2W_dF2(F0)
+    P1 = (A @ dF.flatten()).reshape(DIM,DIM)
+    print(P0)
+    print(P1)
+    print((P0 - P1)/P0)
 
 if __name__ == "__main__":
     main()

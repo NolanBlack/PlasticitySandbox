@@ -196,13 +196,11 @@ class Material(ABC):
                 C = self.C_elastic()
 
             else: # plastic update
-                # solve for the 
+                # solve for the evolution on the yield surface
                 delta_gamma = self.NRstep(f_tri, alpha)
                 sigma_i = self.correct_trial_sigma(sigma_tri, delta_gamma) # update stress
                 eps_p += delta_gamma * np.sign(sigma_tri) # update plastic strain
 
-                # TODO which one??
-                #alpha += delta_gamma * np.sign(sigma_tri) # update plastic strain
                 alpha += delta_gamma # internal state update
                 C = self.C_tangent(alpha)
 
