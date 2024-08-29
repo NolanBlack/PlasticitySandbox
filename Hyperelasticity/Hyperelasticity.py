@@ -102,7 +102,7 @@ def FDcheck_2to2(func, params, input_idx):
             params[input_idx][i,j] += FD_delta
 
             df_dij = (fupp - fdown) / FD_delta / 2
-            df_dx[:,idx] = df_dij.flatten()
+            df_dx[idx,:] = df_dij.flatten()
 
             idx += 1
     return df_dx
@@ -160,7 +160,7 @@ def plot_deformation(dW_dF_function, args):
         F += du_final * (i/ Nsteps)
         P = dW_dF_function(F, *args)
         S = np.linalg.inv(F) @ P
-        sigma = (1./J(F)) * P @ F.T
+        sigma = (1./J(F)) * F.T @ P.T
 
         # save plots
         x.append(F[0,0] - 1)

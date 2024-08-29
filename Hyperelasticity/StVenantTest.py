@@ -1,5 +1,5 @@
 import numpy as np
-from Hyperelasticity import pow, material, FDcheck_2to2, FDcheck_2to1, tensor_2by2_to4, DIM
+from Hyperelasticity import pow, material, J, FDcheck_2to2, FDcheck_2to1, tensor_2by2_to4, DIM
 
 # input parameters
 youngs_mod = 1.0
@@ -258,11 +258,14 @@ def main():
     e = E(F)
     s = dw_de(e)
     p = P(F, s)
+    sigma = (1./J(F)) * F.T @ p.T
     print(F)
     print(E(F))
     print(p)
     print(s)
+    print(sigma)
     print(np.linalg.inv(F) @ p - s)
+    print(J(F) * sigma.T @ np.linalg.inv(F) - p)
     print()
 
     # test dE_dF

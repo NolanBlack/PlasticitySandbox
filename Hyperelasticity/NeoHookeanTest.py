@@ -96,7 +96,35 @@ def main():
     print(d2W_dF2(F, ) - FDcheck_2to2(dW_dF, (F, ), 0))
     print()
 
-    plot_deformation(dW_dF, ())
+    #plot_deformation(dW_dF, ())
+
+
+def check_hyperelasticity():
+    if(DIM == 2):
+        F = F_init2D()
+    else :
+        F = F_init3D()
+
+    print("J")
+    print(dJ_dF(F) - FDcheck_2to1(J, (F,), 0))
+    print()
+
+    print("I1")
+    print(dI1_dF(F) - FDcheck_2to1(I1, (F,), 0))
+    print()
+
+    print("dI1_dF")
+    print(d2I1_dF2(F) - FDcheck_2to2(dI1_dF, (F,), 0))
+    print()
+
+    print("I1bar")
+    print(dI1_bar_dF(F) - FDcheck_2to1(I1_bar, (F,), 0))
+    print()
+
+    print("FinvT")
+    print(dFinvT_dF(F) - FDcheck_2to2(FinvT, (F,), 0))
+    print()
 
 if __name__ == "__main__":
     main()
+    #check_hyperelasticity()
